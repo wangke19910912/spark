@@ -811,6 +811,7 @@ abstract class RDD[T: ClassTag](
    */
   def collect(): Array[T] = {
     val results = sc.runJob(this, (iter: Iterator[T]) => iter.toArray)
+    logWarning("collect 操作开始执行-------------------")
     Array.concat(results: _*)
   }
 

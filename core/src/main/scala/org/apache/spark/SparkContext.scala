@@ -68,13 +68,18 @@ import org.apache.spark.util._
  * Main entry point for Spark functionality. A SparkContext represents the connection to a Spark
  * cluster, and can be used to create RDDs, accumulators and broadcast variables on that cluster.
  *
+ * spark所有功能的主入口,sparkContext代表了连接了spark集群,并且可以创建RDD,创建广播变量,保存在master中
+ *
  * Only one SparkContext may be active per JVM.  You must `stop()` the active SparkContext before
  * creating a new one.  This limitation may eventually be removed; see SPARK-2243 for more details.
  *
+ * 一个jvm只能创建一个sparkContext,在创建一个新的之前需要停止另外一个,这个限制,可能会在以后取消
  * @param config a Spark Config object describing the application configuration. Any settings in
  *   this config overrides the default configs as well as system properties.
  */
 class SparkContext(config: SparkConf) extends Logging with ExecutorAllocationClient {
+
+  //使用默认的构造函数创建SparkContext
 
   // The call site where this SparkContext was constructed.
   private val creationSite: CallSite = Utils.getCallSite()
@@ -104,12 +109,14 @@ class SparkContext(config: SparkConf) extends Logging with ExecutorAllocationCli
   }
 
   /**
+   * 使用默认的环境参数来创建SparkContext
    * Create a SparkContext that loads settings from system properties (for instance, when
    * launching with ./bin/spark-submit).
    */
   def this() = this(new SparkConf())
 
   /**
+   * 在YARN 模式下选择合适的节点NodeManager去启动executor
    * :: DeveloperApi ::
    * Alternative constructor for setting preferred locations where Spark will create executors.
    *
