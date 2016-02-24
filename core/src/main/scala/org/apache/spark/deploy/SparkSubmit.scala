@@ -131,8 +131,9 @@ object SparkSubmit {
 
   /**
    * Submit the application using the provided parameters.
-   *
+   * 提交任务使用提供的参数
    * This runs in two steps. First, we prepare the launch environment by setting up
+   * 分为两步,第一步准备环境,设置正确的类路径,系统属性,和参数,为了访问集群上并启动main函数
    * the appropriate classpath, system properties, and application arguments for
    * running the child main class based on the cluster manager and the deploy mode.
    * Second, we use this launch environment to invoke the main method of the child
@@ -148,6 +149,7 @@ object SparkSubmit {
         try {
           proxyUser.doAs(new PrivilegedExceptionAction[Unit]() {
             override def run(): Unit = {
+              //通过设置好的系统变量启动main函数
               runMain(childArgs, childClasspath, sysProps, childMainClass, args.verbose)
             }
           })
@@ -508,7 +510,7 @@ object SparkSubmit {
       childMainClass: String,
       verbose: Boolean): Unit = {
     if (verbose) {
-      printStream.println(s"Main class:\n$childMainClass")
+      printStream.println(s"Main class:\n")
       printStream.println(s"Arguments:\n${childArgs.mkString("\n")}")
       printStream.println(s"System properties:\n${sysProps.mkString("\n")}")
       printStream.println(s"Classpath elements:\n${childClasspath.mkString("\n")}")

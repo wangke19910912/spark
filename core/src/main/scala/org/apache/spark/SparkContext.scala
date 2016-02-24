@@ -79,7 +79,9 @@ import org.apache.spark.util._
  */
 class SparkContext(config: SparkConf) extends Logging with ExecutorAllocationClient {
 
-  //使用默认的构造函数创建SparkContext
+  /*
+   * 使用默认的构造函数创建SparkContext
+   */
 
   // The call site where this SparkContext was constructed.
   private val creationSite: CallSite = Utils.getCallSite()
@@ -109,7 +111,7 @@ class SparkContext(config: SparkConf) extends Logging with ExecutorAllocationCli
   }
 
   /**
-   * 使用默认的环境参数来创建SparkContext
+   * 不带参数的构造函数调用默认的环境构造参数来创建SparkContext
    * Create a SparkContext that loads settings from system properties (for instance, when
    * launching with ./bin/spark-submit).
    */
@@ -200,12 +202,18 @@ class SparkContext(config: SparkConf) extends Logging with ExecutorAllocationCli
   // log out Spark Version in Spark driver log
   logInfo(s"Running Spark version $SPARK_VERSION")
 
+  /*
+  * 使用conf.clone()方法来完成类的拷贝,创建conf参数创建
+  *
+  */
   private[spark] val conf = config.clone()
+  //校验参数
   conf.validateSettings()
 
   /**
    * Return a copy of this SparkContext's configuration. The configuration ''cannot'' be
    * changed at runtime.
+   * 使用conf.clone()方法来完成类的拷贝,每次获得的是拷贝后的conf参数
    */
   def getConf: SparkConf = conf.clone()
 
@@ -230,6 +238,9 @@ class SparkContext(config: SparkConf) extends Logging with ExecutorAllocationCli
   val files: Seq[String] =
     conf.getOption("spark.files").map(_.split(",")).map(_.filter(_.size != 0)).toSeq.flatten
 
+  /*
+   * 这两个值必须设置
+   */
   val master = conf.get("spark.master")
   val appName = conf.get("spark.app.name")
 
@@ -256,7 +267,9 @@ class SparkContext(config: SparkConf) extends Logging with ExecutorAllocationCli
   // Add a timestamp as the suffix here to make it more safe
   val tachyonFolderName = "spark-" + randomUUID.toString()
   conf.set("spark.tachyonStore.folderName", tachyonFolderName)
-
+  /*
+   * 检查是否spark.master为local模式
+   */
   val isLocal = (master == "local" || master.startsWith("local["))
 
   if (master == "yarn-client") System.setProperty("SPARK_YARN_MODE", "true")
@@ -269,6 +282,9 @@ class SparkContext(config: SparkConf) extends Logging with ExecutorAllocationCli
   // Create the Spark execution environment (cache, map output tracker, etc)
 
   // This function allows components created by SparkEnv to be mocked in unit tests:
+  /*
+   * 根据用户具体的执行环境创建sparkEnv,创建之后将SparkEnv.set到全局变量中
+   */
   private[spark] def createSparkEnv(
       conf: SparkConf,
       isLocal: Boolean,
@@ -301,7 +317,7 @@ class SparkContext(config: SparkConf) extends Logging with ExecutorAllocationCli
       None
     }
 
-  // Initialize the Spark UI
+  // Initialize the Spark UI,初始化spark ui
   private[spark] val ui: Option[SparkUI] =
     if (conf.getBoolean("spark.ui.enabled", true)) {
       Some(SparkUI.createLiveUI(this, conf, listenerBus, jobProgressListener,
@@ -320,6 +336,7 @@ class SparkContext(config: SparkConf) extends Logging with ExecutorAllocationCli
    *
    * '''Note:''' As it will be reused in all Hadoop RDDs, it's better not to modify it unless you
    * plan to set some global configurations for all Hadoop RDDs.
+   * hadoop配置入口
    */
   val hadoopConfiguration = SparkHadoopUtil.get.newConfiguration(conf)
 
@@ -345,6 +362,7 @@ class SparkContext(config: SparkConf) extends Logging with ExecutorAllocationCli
     .getOrElse(512)
 
   // Environment variables to pass to our executors.
+  // 发送到每个executor的环境变量
   private[spark] val executorEnvs = HashMap[String, String]()
 
   // Convert java options to env vars as a work around
@@ -366,6 +384,7 @@ class SparkContext(config: SparkConf) extends Logging with ExecutorAllocationCli
   executorEnvs("SPARK_USER") = sparkUser
 
   // Create and start the scheduler
+  // 创建taskScheduler,dagScheduler,
   private[spark] var (schedulerBackend, taskScheduler) =
     SparkContext.createTaskScheduler(this, master)
   private val heartbeatReceiver = env.actorSystem.actorOf(
@@ -385,6 +404,7 @@ class SparkContext(config: SparkConf) extends Logging with ExecutorAllocationCli
 
   // start TaskScheduler after taskScheduler sets DAGScheduler reference in DAGScheduler's
   // constructor
+  // 在设置好taskScheduler和DAGScheduler之后激进型启动
   taskScheduler.start()
 
   val applicationId: String = taskScheduler.applicationId()
@@ -593,6 +613,7 @@ class SparkContext(config: SparkConf) extends Logging with ExecutorAllocationCli
    */
   def textFile(path: String, minPartitions: Int = defaultMinPartitions): RDD[String] = {
     assertNotStopped()
+    //textFile实际调用hadoopFile完成工作
     hadoopFile(path, classOf[TextInputFormat], classOf[LongWritable], classOf[Text],
       minPartitions).map(pair => pair._2.toString).setName(path)
   }
@@ -769,6 +790,7 @@ class SparkContext(config: SparkConf) extends Logging with ExecutorAllocationCli
       ): RDD[(K, V)] = {
     assertNotStopped()
     // A Hadoop configuration can be about 10 KB, which is pretty big, so broadcast it.
+    //使用广播变量上传配置信息
     val confBroadcast = broadcast(new SerializableWritable(hadoopConfiguration))
     val setInputPathsFunc = (jobConf: JobConf) => FileInputFormat.setInputPaths(jobConf, path)
     new HadoopRDD(
@@ -2131,6 +2153,7 @@ object SparkContext extends Logging {
 
     master match {
       case "local" =>
+        //本地模式时候启动TaskSchedulerImpl,和集群模式相同,因为要切分任务,创建任务等一系列操作都是相同的
         val scheduler = new TaskSchedulerImpl(sc, MAX_LOCAL_TASK_FAILURES, isLocal = true)
         val backend = new LocalBackend(scheduler, 1)
         scheduler.initialize(backend)
@@ -2185,6 +2208,7 @@ object SparkContext extends Logging {
         }
         (backend, scheduler)
 
+        //使用yarn-cluster的入口
       case "yarn-standalone" | "yarn-cluster" =>
         if (master == "yarn-standalone") {
           logWarning(

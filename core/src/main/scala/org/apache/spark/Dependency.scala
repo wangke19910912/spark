@@ -88,6 +88,7 @@ class ShuffleDependency[K, V, C](
 /**
  * :: DeveloperApi ::
  * Represents a one-to-one dependency between partitions of the parent and child RDDs.
+ * 对于OneToOneDenpendency的类型的依赖,getParents直接返回partitionid组成的list
  */
 @DeveloperApi
 class OneToOneDependency[T](rdd: RDD[T]) extends NarrowDependency[T](rdd) {

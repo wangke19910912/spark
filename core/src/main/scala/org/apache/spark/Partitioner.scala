@@ -53,6 +53,8 @@ object Partitioner {
    * be least likely to cause out-of-memory errors.
    *
    * We use two method parameters (rdd, others) to enforce callers passing at least 1 RDD.
+   * 获取分区数量,如果这个rdd已经有分区器,则获取当前的RDDS的分区器
+   * 如果没有则根据配置创建一个默认HashParttioner,如果不存在当前配置,则使用最大的分区数量创建一个分区器
    */
   def defaultPartitioner(rdd: RDD[_], others: RDD[_]*): Partitioner = {
     val bySize = (Seq(rdd) ++ others).sortBy(_.partitions.size).reverse
@@ -83,6 +85,8 @@ class HashPartitioner(partitions: Int) extends Partitioner {
     case _ => Utils.nonNegativeMod(key.hashCode, numPartitions)
   }
 
+
+  //两个分区数量相等则认为这两个类是相同的
   override def equals(other: Any): Boolean = other match {
     case h: HashPartitioner =>
       h.numPartitions == numPartitions

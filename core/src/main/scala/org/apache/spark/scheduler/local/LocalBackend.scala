@@ -51,6 +51,7 @@ private[spark] class LocalActor(
   private val localExecutorId = SparkContext.DRIVER_IDENTIFIER
   private val localExecutorHostname = "localhost"
 
+  //在本地创建Executor执行任务
   private val executor = new Executor(
     localExecutorId, localExecutorHostname, SparkEnv.get, isLocal = true)
 
@@ -73,6 +74,7 @@ private[spark] class LocalActor(
   }
 
   def reviveOffers() {
+    //非本地任务会调用makeOffers
     val offers = Seq(new WorkerOffer(localExecutorId, localExecutorHostname, freeCores))
     for (task <- scheduler.resourceOffers(offers).flatten) {
       freeCores -= scheduler.CPUS_PER_TASK
@@ -103,6 +105,7 @@ private[spark] class LocalBackend(scheduler: TaskSchedulerImpl, val totalCores: 
     localActor ! StopExecutor
   }
 
+  //向localActor发送reviveOffers执行任务
   override def reviveOffers() {
     localActor ! ReviveOffers
   }

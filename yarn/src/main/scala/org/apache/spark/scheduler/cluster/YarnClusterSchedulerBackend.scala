@@ -28,6 +28,8 @@ private[spark] class YarnClusterSchedulerBackend(
   extends YarnSchedulerBackend(scheduler, sc) {
 
   override def start() {
+
+    //首先调用父类构造函数
     super.start()
     totalExpectedExecutors = DEFAULT_NUMBER_EXECUTORS
     if (System.getenv("SPARK_EXECUTOR_INSTANCES") != null) {

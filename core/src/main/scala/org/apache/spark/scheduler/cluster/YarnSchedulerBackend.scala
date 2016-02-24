@@ -45,6 +45,7 @@ private[spark] abstract class YarnSchedulerBackend(
 
   protected var totalExpectedExecutors = 0
 
+  //创建YarnSchedulerActor
   private val yarnSchedulerActor: ActorRef =
     actorSystem.actorOf(
       Props(new YarnSchedulerActor),

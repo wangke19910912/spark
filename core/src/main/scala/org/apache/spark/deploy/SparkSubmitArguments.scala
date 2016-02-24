@@ -67,6 +67,9 @@ private[spark] class SparkSubmitArguments(args: Seq[String], env: Map[String, St
   var useRest: Boolean = true // used internally
 
   /** Default properties present in the currently defined defaults file. */
+  /*
+   * lazy程度的
+   */
   lazy val defaultSparkProperties: HashMap[String, String] = {
     val defaultProperties = new HashMap[String, String]()
     if (verbose) SparkSubmit.printStream.println(s"Using properties file: $propertiesFile")
@@ -84,10 +87,13 @@ private[spark] class SparkSubmitArguments(args: Seq[String], env: Map[String, St
   }
 
   // Set parameters from command line arguments
+  //解析参数
   parseOpts(args.toList)
   // Populate `sparkProperties` map from properties file
+  //将配置文件中默认的参数合并
   mergeDefaultSparkProperties()
   // Use `sparkProperties` map along with env vars to fill in any missing parameters
+  //载入系统环境变量
   loadEnvironmentArguments()
 
   validateArguments()
@@ -285,6 +291,7 @@ private[spark] class SparkSubmitArguments(args: Seq[String], env: Map[String, St
     val EQ_SEPARATED_OPT="""(--[^=]+)=(.+)""".r
 
     // Delineates parsing of Spark options from parsing of user options.
+    //使用递归来解析参数
     parse(opts)
 
     /**

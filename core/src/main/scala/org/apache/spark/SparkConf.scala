@@ -35,8 +35,9 @@ import org.apache.spark.util.Utils
  *
  * For unit tests, you can also call `new SparkConf(false)` to skip loading external settings and
  * get the same configuration no matter what the system properties are.
- *
+
  * All setter methods in this class support chaining. For example, you can write
+ *  Master 和appName这两个必须设置
  * `new SparkConf().setMaster("local").setAppName("My app")`.
  *
  * Note that once a SparkConf object is passed to Spark, it is cloned and can no longer be modified

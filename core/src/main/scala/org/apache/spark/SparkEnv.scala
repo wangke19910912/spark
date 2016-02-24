@@ -263,11 +263,16 @@ object SparkEnv extends Logging {
     val closureSerializer = instantiateClassFromConf[Serializer](
       "spark.closure.serializer", "org.apache.spark.serializer.JavaSerializer")
 
+    /*
+     * 新创建的函数都使用次函数寻找actor的ref
+     */
     def registerOrLookup(name: String, newActor: => Actor): ActorRef = {
       if (isDriver) {
         logInfo("Registering " + name)
+        //在本地的actorSystem注册新的actor
         actorSystem.actorOf(Props(newActor), name = name)
       } else {
+        //从远程ActorSystem中查找已经注册过的actor
         AkkaUtils.makeDriverRef(name, conf, actorSystem)
       }
     }
@@ -280,6 +285,7 @@ object SparkEnv extends Logging {
 
     // Have to assign trackerActor after initialization as MapOutputTrackerActor
     // requires the MapOutputTracker itself
+    //初始化mapOutputTracker,如果是driver则创建并注册新的Master,否则则返回远程查找得到的master
     mapOutputTracker.trackerActor = registerOrLookup(
       "MapOutputTracker",
       new MapOutputTrackerMasterActor(mapOutputTracker.asInstanceOf[MapOutputTrackerMaster], conf))
@@ -294,6 +300,7 @@ object SparkEnv extends Logging {
 
     val shuffleMemoryManager = new ShuffleMemoryManager(conf)
 
+    //初始化blockTransferService,根据配置不同的数据交换方式
     val blockTransferService =
       conf.get("spark.shuffle.blockTransferService", "netty").toLowerCase match {
         case "netty" =>
@@ -302,10 +309,12 @@ object SparkEnv extends Logging {
           new NioBlockTransferService(conf, securityManager)
       }
 
+    //创建blockManagerMaster,如果是driver则创建blockManager,否则返回远程的blockManagerActor句柄
     val blockManagerMaster = new BlockManagerMaster(registerOrLookup(
       "BlockManagerMaster",
       new BlockManagerMasterActor(isLocal, conf, listenerBus)), conf, isDriver)
 
+    //创建blockManager之后,每个blockmanager也带有一个slaveactor用于处理masterActor返回的消息
     // NB: blockManager is not valid until initialize() is called later.
     val blockManager = new BlockManager(executorId, actorSystem, blockManagerMaster,
       serializer, conf, mapOutputTracker, shuffleManager, blockTransferService, securityManager,
