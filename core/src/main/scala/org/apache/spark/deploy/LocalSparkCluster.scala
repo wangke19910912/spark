@@ -51,6 +51,7 @@ class LocalSparkCluster(
     val _conf = conf.clone().setIfMissing("spark.master.rest.enabled", "false")
 
     /* Start the Master */
+    //以函数直接调用方式启动master
     val (masterSystem, masterPort, _, _) = Master.startSystemAndActor(localHostname, 0, 0, _conf)
     masterActorSystems += masterSystem
     val masterUrl = "spark://" + localHostname + ":" + masterPort

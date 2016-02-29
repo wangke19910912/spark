@@ -601,6 +601,7 @@ private[spark] class Master(
 
   def launchExecutor(worker: WorkerInfo, exec: ExecutorDesc) {
     logInfo("Launching executor " + exec.fullId + " on worker " + worker.id)
+    //启动executor,根据逻辑分配后的结果启动executor,每个机器上只有一个executor实例
     worker.addExecutor(exec)
     worker.actor ! LaunchExecutor(masterUrl,
       exec.application.id, exec.id, exec.application.desc, exec.cores, exec.memory)
@@ -907,8 +908,10 @@ private[spark] object Master extends Logging {
       webUiPort: Int,
       conf: SparkConf): (ActorSystem, Int, Int, Option[Int]) = {
     val securityMgr = new SecurityManager(conf)
+    //创建ActorSystem
     val (actorSystem, boundPort) = AkkaUtils.createActorSystem(systemName, host, port, conf = conf,
       securityManager = securityMgr)
+    //使用Master.scala创建
     val actor = actorSystem.actorOf(
       Props(classOf[Master], host, boundPort, webUiPort, securityMgr, conf), actorName)
     val timeout = AkkaUtils.askTimeout(conf)
