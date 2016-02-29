@@ -241,6 +241,7 @@ abstract class RDD[T: ClassTag](
     if (storageLevel != StorageLevel.NONE) {
       SparkEnv.get.cacheManager.getOrCompute(this, split, context, storageLevel)
     } else {
+      //如果不能从rdd中获取,最终调用computeOrReadCheckpoint方法
       computeOrReadCheckpoint(split, context)
     }
   }
@@ -274,6 +275,7 @@ abstract class RDD[T: ClassTag](
    */
   private[spark] def computeOrReadCheckpoint(split: Partition, context: TaskContext): Iterator[T] =
   {
+    //如果当前结果在checkpoint中可以找到,那么直接计算上一层rdd结果,否则进行计算
     if (isCheckpointed) firstParent[T].iterator(split, context) else compute(split, context)
   }
 
@@ -284,6 +286,7 @@ abstract class RDD[T: ClassTag](
    */
   def map[U: ClassTag](f: T => U): RDD[U] = {
     val cleanF = sc.clean(f)
+    //1.包装以后的函数作为参数传入map中进行迭代,可以看出map是对每个分区的迭代器进行操作
     new MapPartitionsRDD[U, T](this, (context, pid, iter) => iter.map(cleanF))
   }
 
@@ -293,6 +296,7 @@ abstract class RDD[T: ClassTag](
    */
   def flatMap[U: ClassTag](f: T => TraversableOnce[U]): RDD[U] = {
     val cleanF = sc.clean(f)
+    //2.与1不同的是采用了flatmap作为递归方法
     new MapPartitionsRDD[U, T](this, (context, pid, iter) => iter.flatMap(cleanF))
   }
 
@@ -628,6 +632,8 @@ abstract class RDD[T: ClassTag](
    *
    * `preservesPartitioning` indicates whether the input function preserves the partitioner, which
    * should be `false` unless this is a pair RDD and the input function doesn't modify the keys.
+   *
+   * 调用函数时,会将自身封装到一个新的RDD中,会将其转化为新的rdd,将原来的rdd封装到当前rdd的依赖中
    */
   def mapPartitions[U: ClassTag](
       f: Iterator[T] => Iterator[U], preservesPartitioning: Boolean = false): RDD[U] = {

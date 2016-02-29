@@ -610,6 +610,7 @@ class SparkContext(config: SparkConf) extends Logging with ExecutorAllocationCli
   /**
    * Read a text file from HDFS, a local file system (available on all nodes), or any
    * Hadoop-supported file system URI, and return it as an RDD of Strings.
+   * textFile--->调用hadoopRDD的方法进行初始化
    */
   def textFile(path: String, minPartitions: Int = defaultMinPartitions): RDD[String] = {
     assertNotStopped()
@@ -1510,6 +1511,7 @@ class SparkContext(config: SparkConf) extends Logging with ExecutorAllocationCli
     if (conf.getBoolean("spark.logLineage", false)) {
       logInfo("RDD's recursive dependencies:\n" + rdd.toDebugString)
     }
+    //调用dagScheduler的runjob方法
     dagScheduler.runJob(rdd, cleanedFunc, partitions, callSite, allowLocal,
       resultHandler, localProperties.get)
     progressBar.foreach(_.finishAll())
@@ -2151,15 +2153,21 @@ object SparkContext extends Logging {
     // When running locally, don't try to re-execute tasks on failure.
     val MAX_LOCAL_TASK_FAILURES = 1
 
+    //根据不同的spark-submit参数来选择启动spark的方式
+    //具体是TaskSchedulerImpl和SparkContext
     master match {
       case "local" =>
         //本地模式时候启动TaskSchedulerImpl,和集群模式相同,因为要切分任务,创建任务等一系列操作都是相同的
+        //但是最后采用了LocalBackend来作为任务提交的核心类
         val scheduler = new TaskSchedulerImpl(sc, MAX_LOCAL_TASK_FAILURES, isLocal = true)
+        //创建Executor默认是用一个线程去执行
         val backend = new LocalBackend(scheduler, 1)
         scheduler.initialize(backend)
         (backend, scheduler)
 
       case LOCAL_N_REGEX(threads) =>
+        //匹配多个线程local[*]的模式
+        //获得系统的cpu数量
         def localCpuCount = Runtime.getRuntime.availableProcessors()
         // local[*] estimates the number of cores on the machine; local[N] uses exactly N threads.
         val threadCount = if (threads == "*") localCpuCount else threads.toInt
@@ -2167,6 +2175,7 @@ object SparkContext extends Logging {
           throw new SparkException(s"Asked to run locally with $threadCount threads")
         }
         val scheduler = new TaskSchedulerImpl(sc, MAX_LOCAL_TASK_FAILURES, isLocal = true)
+        //local模式采用localBackend,会在一个executor启动多个线程
         val backend = new LocalBackend(scheduler, threadCount)
         scheduler.initialize(backend)
         (backend, scheduler)
@@ -2181,6 +2190,7 @@ object SparkContext extends Logging {
         scheduler.initialize(backend)
         (backend, scheduler)
 
+       //访问sparkUrl所指向的集群
       case SPARK_REGEX(sparkUrl) =>
         val scheduler = new TaskSchedulerImpl(sc)
         val masterUrls = sparkUrl.split(",").map("spark://" + _)
@@ -2188,9 +2198,12 @@ object SparkContext extends Logging {
         scheduler.initialize(backend)
         (backend, scheduler)
 
+        //启动本地cluster模式,会在本地同一个进程中启动多个Executor
       case LOCAL_CLUSTER_REGEX(numSlaves, coresPerSlave, memoryPerSlave) =>
         // Check to make sure memory requested <= memoryPerSlave. Otherwise Spark will just hang.
         val memoryPerSlaveInt = memoryPerSlave.toInt
+
+        //保证executor的memory超过每个
         if (sc.executorMemory > memoryPerSlaveInt) {
           throw new SparkException(
             "Asked to launch cluster with %d MB RAM / worker but requested %d MB/worker".format(
@@ -2198,9 +2211,12 @@ object SparkContext extends Logging {
         }
 
         val scheduler = new TaskSchedulerImpl(sc)
+        //使用LocalSparkCluster启动多个worker
         val localCluster = new LocalSparkCluster(
           numSlaves.toInt, coresPerSlave.toInt, memoryPerSlaveInt, sc.conf)
         val masterUrls = localCluster.start()
+        //SparkDeploySchedulerBackend继承自CoarseGrainedExecutorBackend,主要功能是创建app,申请资源,让master启动
+        //后申请资源,在相应机器上启动executor,executor启动后会想driver进行注册
         val backend = new SparkDeploySchedulerBackend(scheduler, sc, masterUrls)
         scheduler.initialize(backend)
         backend.shutdownCallback = (backend: SparkDeploySchedulerBackend) => {

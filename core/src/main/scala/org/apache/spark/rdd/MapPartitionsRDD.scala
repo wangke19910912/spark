@@ -27,10 +27,15 @@ private[spark] class MapPartitionsRDD[U: ClassTag, T: ClassTag](
     preservesPartitioning: Boolean = false)
   extends RDD[U](prev) {
 
+  //first parent即是现在的prev的partitioner
   override val partitioner = if (preservesPartitioning) firstParent[T].partitioner else None
 
+
+  //如果这个类需要shuffle操作要实现这个方法去获得分区数量,一层一层最总到获取数据的这个函数是真正获得分区数量的函数接口
   override def getPartitions: Array[Partition] = firstParent[T].partitions
 
+
+  //所有的普通(RDD)不需要进行shuffle的rdd,都要实现这个方法,
   override def compute(split: Partition, context: TaskContext) =
     f(context, split.index, firstParent[T].iterator(split, context))
 }

@@ -158,6 +158,7 @@ private[spark] class TaskSchedulerImpl(
     val tasks = taskSet.tasks
     logInfo("Adding task set " + taskSet.id + " with " + tasks.length + " tasks")
     this.synchronized {
+      //创建taskManager,并将任务送入调度器,此后任务的执行都为调度器驱使
       val manager = createTaskSetManager(taskSet, maxTaskFailures)
       activeTaskSets(taskSet.id) = manager
       schedulableBuilder.addTaskSetManager(manager, manager.taskSet.properties)
@@ -177,6 +178,7 @@ private[spark] class TaskSchedulerImpl(
       }
       hasReceivedTask = true
     }
+    //进行一次调度
     backend.reviveOffers()
   }
 

@@ -67,6 +67,7 @@ private[spark] class CacheManager(blockManager: BlockManager) extends Logging {
         // Otherwise, we have to load the partition ourselves
         try {
           logInfo(s"Partition $key not found, computing it")
+          //查看是否已经缓存,如果有直接发送,没有的话进行计算
           val computedValues = rdd.computeOrReadCheckpoint(partition, context)
 
           // If the task is running locally, do not persist the result

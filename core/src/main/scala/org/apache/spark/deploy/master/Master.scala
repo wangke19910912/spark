@@ -525,6 +525,7 @@ private[spark] class Master(
    * Schedule the currently available resources among waiting apps. This method will be called
    * every time a new app joins or resource availability changes.
    */
+  //使用scheduler进行调度
   private def schedule() {
     if (state != RecoveryState.ALIVE) { return }
 
@@ -534,12 +535,14 @@ private[spark] class Master(
     val numWorkersAlive = shuffledAliveWorkers.size
     var curPos = 0
 
+    //调度dirver
     for (driver <- waitingDrivers.toList) { // iterate over a copy of waitingDrivers
       // We assign workers to each waiting driver in a round-robin fashion. For each driver, we
       // start from the last worker that was assigned a driver, and continue onwards until we have
       // explored all alive workers.
       var launched = false
       var numWorkersVisited = 0
+      //遍历所有可用的Worker寻找一个内存大于Driver申请内存的节点启动
       while (numWorkersVisited < numWorkersAlive && !launched) {
         val worker = shuffledAliveWorkers(curPos)
         numWorkersVisited += 1

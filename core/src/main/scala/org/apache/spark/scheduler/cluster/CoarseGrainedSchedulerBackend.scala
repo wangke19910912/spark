@@ -163,6 +163,9 @@ class CoarseGrainedSchedulerBackend(scheduler: TaskSchedulerImpl, val actorSyste
     }
 
     // Make fake resource offers on all executors
+    // resourceOffers参数为所有可用资源的机器列表
+    // resourceOffers使用这些资源生成TaskDespcription
+    // launchTasks进行计算
     def makeOffers() {
       launchTasks(scheduler.resourceOffers(executorDataMap.map { case (id, executorData) =>
         new WorkerOffer(id, executorData.executorHost, executorData.freeCores)
@@ -199,6 +202,7 @@ class CoarseGrainedSchedulerBackend(scheduler: TaskSchedulerImpl, val actorSyste
         else {
           val executorData = executorDataMap(task.executorId)
           executorData.freeCores -= scheduler.CPUS_PER_TASK
+          //发送序列化的数据,并启动任务
           executorData.executorActor ! LaunchTask(new SerializableBuffer(serializedTask))
         }
       }

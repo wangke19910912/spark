@@ -51,7 +51,7 @@ private[spark] class LocalActor(
   private val localExecutorId = SparkContext.DRIVER_IDENTIFIER
   private val localExecutorHostname = "localhost"
 
-  //在本地创建Executor执行任务
+  //在本地创建Executor执行任务,Local模式Executor和Driver在同一个进程
   private val executor = new Executor(
     localExecutorId, localExecutorHostname, SparkEnv.get, isLocal = true)
 
@@ -74,10 +74,15 @@ private[spark] class LocalActor(
   }
 
   def reviveOffers() {
-    //非本地任务会调用makeOffers
+    //非本地任务会调用makeOffers,本地任务直接采用本地资源进行计算
     val offers = Seq(new WorkerOffer(localExecutorId, localExecutorHostname, freeCores))
+    //scheduler#resourceOffers分配后的执行序列
     for (task <- scheduler.resourceOffers(offers).flatten) {
+      //可使用的cpu core数量中减去使用掉的cpucore数量,然后启动相等数量的线程,
+      //使用每个core执行一个线程
+      //本地环境默认使用一个core
       freeCores -= scheduler.CPUS_PER_TASK
+      //启动任务执行
       executor.launchTask(executorBackend, taskId = task.taskId, attemptNumber = task.attemptNumber,
         task.name, task.serializedTask)
     }

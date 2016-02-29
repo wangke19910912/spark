@@ -78,6 +78,8 @@ private[spark] class Stage(
   var latestInfo: StageInfo = StageInfo.fromStage(this)
 
   def isAvailable: Boolean = {
+    //判断可用的条件,不是shffleMap类型的RD那么则直接判断为可用,
+    //否则查看输入的outputs是是否和分区数量一致,一致则表示上一步shuffle操作完成
     if (!isShuffleMap) {
       true
     } else {

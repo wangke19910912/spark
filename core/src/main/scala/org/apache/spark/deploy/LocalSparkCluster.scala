@@ -57,7 +57,10 @@ class LocalSparkCluster(
     val masters = Array(masterUrl)
 
     /* Start the Workers */
+    //创建多个worker,在同一个jvm进程中,进程中采用
     for (workerNum <- 1 to numWorkers) {
+      //不使用main函数的worker进行启动,直接使用静态函数启动,main函数使用standalone模式启动
+      //main函数的核心也是调用startSystemAndActor
       val (workerSystem, _) = Worker.startSystemAndActor(localHostname, 0, 0, coresPerWorker,
         memoryPerWorker, masters, null, Some(workerNum), _conf)
       workerActorSystems += workerSystem
