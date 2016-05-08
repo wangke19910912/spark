@@ -36,6 +36,7 @@ shift
 done
 
 # Load the Spark configuration
+#1.首先调用spark-config.sh来设定环境变量
 . "$sbin/spark-config.sh"
 
 # Start Master

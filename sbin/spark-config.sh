@@ -33,6 +33,7 @@ this="$config_bin/$script"
 
 export SPARK_PREFIX="`dirname "$this"`"/..
 export SPARK_HOME="${SPARK_PREFIX}"
+#这里配置SPARK_CONF_DIR,如果没有设置,默认为SPARK_HOME/conf
 export SPARK_CONF_DIR="${SPARK_CONF_DIR:-"$SPARK_HOME/conf"}"
 # Add the PySpark classes to the PYTHONPATH:
 export PYTHONPATH="$SPARK_HOME/python:$PYTHONPATH"

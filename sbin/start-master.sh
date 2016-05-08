@@ -38,9 +38,11 @@ case $1 in
   esac
 shift
 done
-
+#为了避免用户直接调用start-master.sh
 . "$sbin/spark-config.sh"
 
+
+#设定必要的环境变量这里会调用spark_env.sh设定环境变量,为后续启动做准备
 . "$SPARK_PREFIX/bin/load-spark-env.sh"
 
 if [ "$SPARK_MASTER_PORT" = "" ]; then

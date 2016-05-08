@@ -62,6 +62,7 @@ then
   shift
 fi
 
+#option default is  start
 option=$1
 shift
 command=$1
@@ -149,6 +150,7 @@ case $option in
       nohup nice -n $SPARK_NICENESS "$SPARK_PREFIX"/bin/spark-submit --class $command \
         "${SUBMISSION_OPTS[@]}" spark-internal "${APPLICATION_OPTS[@]}" >> "$log" 2>&1 < /dev/null &
     else
+      #nohup启动进程,保证终端关闭也不退出
       nohup nice -n $SPARK_NICENESS "$SPARK_PREFIX"/bin/spark-class $command "$@" >> "$log" 2>&1 < /dev/null &
     fi
     newpid=$!
