@@ -331,9 +331,9 @@ class DAGScheduler(
       partitions: Array[Int],
       jobId: Int,
       callSite: CallSite): ResultStage = {
-    val (parentStages: List[Stage], id: Int) = getParentStagesAndId(rdd, jobId)
-    val stage = new ResultStage(id, rdd, func, partitions, parentStages, jobId, callSite)
-    stageIdToStage(id) = stage
+      val (parentStages: List[Stage], id: Int) = getParentStagesAndId(rdd, jobId)
+      val stage = new ResultStage(id, rdd, func, partitions, parentStages, jobId, callSite)
+      stageIdToStage(id) = stage
     updateJobIdStageIdMaps(jobId, stage)
     stage
   }
@@ -371,6 +371,7 @@ class DAGScheduler(
   /**
    * Get or create the list of parent stages for a given RDD.  The new Stages will be created with
    * the provided firstJobId.
+    * 获得当前rdd的父rdd
    */
   private def getParentStages(rdd: RDD[_], firstJobId: Int): List[Stage] = {
     val parents = new HashSet[Stage]
@@ -383,11 +384,14 @@ class DAGScheduler(
         visited += r
         // Kind of ugly: need to register RDDs with the cache here since
         // we can't do it in its constructor because # of partitions is unknown
+        // 循环遍历所有依赖类型,宽依赖和窄依赖,这个在使用rrd就已经确定
         for (dep <- r.dependencies) {
           dep match {
+              //如果是宽依赖,则添加到RDD的parents中
             case shufDep: ShuffleDependency[_, _, _] =>
               parents += getShuffleMapStage(shufDep, firstJobId)
             case _ =>
+              //如果是窄依赖,则继续处理,知道遇到宽依赖
               waitingForVisit.push(dep.rdd)
           }
         }
