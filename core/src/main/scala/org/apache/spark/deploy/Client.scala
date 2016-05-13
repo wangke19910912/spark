@@ -106,6 +106,7 @@ private class ClientEndpoint(
    */
   private def ayncSendToMasterAndForwardReply[T: ClassTag](message: Any): Unit = {
     for (masterEndpoint <- masterEndpoints) {
+      //onComplete 回调方法
       masterEndpoint.ask[T](message).onComplete {
         case Success(v) => self.send(v)
         case Failure(e) =>
@@ -206,6 +207,7 @@ private class ClientEndpoint(
 
 /**
  * Executable utility for starting and terminating drivers inside of a standalone cluster.
+  * 用户提交程序到master的入口函数
  */
 object Client {
   def main(args: Array[String]) {
@@ -229,8 +231,10 @@ object Client {
     val rpcEnv =
       RpcEnv.create("driverClient", Utils.localHostName(), 0, conf, new SecurityManager(conf))
 
+    //获得后端master RPC
     val masterEndpoints = driverArgs.masters.map(RpcAddress.fromSparkURL).
       map(rpcEnv.setupEndpointRef(Master.SYSTEM_NAME, _, Master.ENDPOINT_NAME))
+    //setupEndpoint
     rpcEnv.setupEndpoint("client", new ClientEndpoint(rpcEnv, driverArgs, masterEndpoints, conf))
 
     rpcEnv.awaitTermination()

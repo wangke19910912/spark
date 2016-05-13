@@ -44,6 +44,10 @@ import org.apache.spark.util.random.{BernoulliSampler, PoissonSampler, Bernoulli
   SamplingUtils}
 
 /**
+  * RDD代表了一个不可变,可以分组处理的数据集,这个类保欢乐一组基本的RDD操作
+  * org.apache.spark.rdd.PairRDDFunctions 实现了key-value类型的RDD
+  * org.apache.spark.rdd.SequenceFileRDDFunctions 实现了持久化到SequenceFile的RDD
+  * 所有的转换都通过scala的隐式转换完成
  * A Resilient Distributed Dataset (RDD), the basic abstraction in Spark. Represents an immutable,
  * partitioned collection of elements that can be operated on in parallel. This class contains the
  * basic operations available on all RDDs, such as `map`, `filter`, and `persist`. In addition,
@@ -57,7 +61,7 @@ import org.apache.spark.util.random.{BernoulliSampler, PoissonSampler, Bernoulli
  * through implicit.
  *
  * Internally, each RDD is characterized by five main properties:
- *
+ *  所有的RDD包含了五个特性:一组分片,可以分组计算的函数,一组依赖其他RDD
  *  - A list of partitions
  *  - A function for computing each split
  *  - A list of dependencies on other RDDs

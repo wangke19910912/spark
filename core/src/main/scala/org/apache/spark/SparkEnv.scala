@@ -251,6 +251,7 @@ object SparkEnv extends Logging {
     val securityManager = new SecurityManager(conf)
 
     // Create the ActorSystem for Akka and get the port it binds to.
+    // Driver的执行方式还是AKKA
     val actorSystemName = if (isDriver) driverActorSystemName else executorActorSystemName
     val rpcEnv = RpcEnv.create(actorSystemName, hostname, port, conf, securityManager,
       clientMode = !isDriver)
@@ -304,6 +305,7 @@ object SparkEnv extends Logging {
       instantiateClass[T](conf.get(propertyName, defaultClassName))
     }
 
+    //实例化序列化器
     val serializer = instantiateClassFromConf[Serializer](
       "spark.serializer", "org.apache.spark.serializer.JavaSerializer")
     logDebug(s"Using serializer: ${serializer.getClass}")

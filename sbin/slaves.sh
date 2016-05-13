@@ -68,6 +68,7 @@ fi
 
 . "${SPARK_HOME}/bin/load-spark-env.sh"
 
+#从conf/slaves中读出所有的slaves'hosts
 if [ "$HOSTLIST" = "" ]; then
   if [ "$SPARK_SLAVES" = "" ]; then
     if [ -f "${SPARK_CONF_DIR}/slaves" ]; then
@@ -87,6 +88,7 @@ if [ "$SPARK_SSH_OPTS" = "" ]; then
   SPARK_SSH_OPTS="-o StrictHostKeyChecking=no"
 fi
 
+#去相应机器执行相应start-slave.sh命令
 for slave in `echo "$HOSTLIST"|sed  "s/#.*$//;/^$/d"`; do
   if [ -n "${SPARK_SSH_FOREGROUND}" ]; then
     ssh $SPARK_SSH_OPTS "$slave" $"${@// /\\ }" \

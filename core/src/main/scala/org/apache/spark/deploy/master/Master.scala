@@ -15,6 +15,12 @@
  * limitations under the License.
  */
 
+/*
+   diffcult:
+   Master本身不是一个Actor,或者Nttey的通道,不能进行通信,但是RpcEnv
+
+
+ */
 package org.apache.spark.deploy.master
 
 import java.io.FileNotFoundException
@@ -398,6 +404,7 @@ private[deploy] class Master(
         persistenceEngine.addDriver(driver)
         waitingDrivers += driver
         drivers.add(driver)
+        //创建之后立即进行一轮调度,看是否有资源可以立即执行
         schedule()
 
         // TODO: It might be good to instead have the submission client poll the master to determine
@@ -681,6 +688,7 @@ private[deploy] class Master(
   /**
    * Schedule the currently available resources among waiting apps. This method will be called
    * every time a new app joins or resource availability changes.
+    * 根据可用资源进行一次调度,使用可用资源来执行Driver
    */
   private def schedule(): Unit = {
     if (state != RecoveryState.ALIVE) { return }
@@ -1057,6 +1065,7 @@ private[deploy] object Master extends Logging {
     SignalLogger.register(log)
     val conf = new SparkConf
     val args = new MasterArguments(argStrings, conf)
+    //启动相关RPCServer,进程
     val (rpcEnv, _, _) = startRpcEnvAndEndpoint(args.host, args.port, args.webUiPort, conf)
     rpcEnv.awaitTermination()
   }
@@ -1066,6 +1075,7 @@ private[deploy] object Master extends Logging {
    *   (1) The Master RpcEnv
    *   (2) The web UI bound port
    *   (3) The REST server bound port, if any
+    *   master 启动的入口,需要从launcher中拼接获取相关参数,相关参数如下
    */
   def startRpcEnvAndEndpoint(
       host: String,
@@ -1073,7 +1083,9 @@ private[deploy] object Master extends Logging {
       webUiPort: Int,
       conf: SparkConf): (RpcEnv, Int, Option[Int]) = {
     val securityMgr = new SecurityManager(conf)
+    //选择netty or akka选择通信类型,创建rpc执行环境
     val rpcEnv = RpcEnv.create(SYSTEM_NAME, host, port, conf, securityMgr)
+
     val masterEndpoint = rpcEnv.setupEndpoint(ENDPOINT_NAME,
       new Master(rpcEnv, rpcEnv.address, webUiPort, securityMgr, conf))
     val portsResponse = masterEndpoint.askWithRetry[BoundPortsResponse](BoundPortsRequest)

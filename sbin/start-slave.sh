@@ -59,6 +59,7 @@ MASTER=$1
 shift
 
 # Determine desired worker port
+# 默认8081
 if [ "$SPARK_WORKER_WEBUI_PORT" = "" ]; then
   SPARK_WORKER_WEBUI_PORT=8081
 fi
@@ -69,6 +70,9 @@ function start_instance {
   WORKER_NUM=$1
   shift
 
+#如果没有配置,则不添加属性,使用java中默认属性
+#如果配置了,则配置为当前实例数量+port
+
   if [ "$SPARK_WORKER_PORT" = "" ]; then
     PORT_FLAG=
     PORT_NUM=
@@ -78,6 +82,7 @@ function start_instance {
   fi
   WEBUI_PORT=$(( $SPARK_WORKER_WEBUI_PORT + $WORKER_NUM - 1 ))
 
+  #CLASS="org.apache.spark.deploy.worker.Worker"
   "${SPARK_HOME}/sbin"/spark-daemon.sh start $CLASS $WORKER_NUM \
      --webui-port "$WEBUI_PORT" $PORT_FLAG $PORT_NUM $MASTER "$@"
 }

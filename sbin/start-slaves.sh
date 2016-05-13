@@ -58,4 +58,5 @@ if [ "$START_TACHYON" == "true" ]; then
 fi
 
 # Launch the slaves
+#会抵达当前进程执行start-slaves.sh
 "${SPARK_HOME}/sbin/slaves.sh" cd "${SPARK_HOME}" \; "${SPARK_HOME}/sbin/start-slave.sh" "spark://$SPARK_MASTER_IP:$SPARK_MASTER_PORT"

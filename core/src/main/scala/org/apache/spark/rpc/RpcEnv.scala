@@ -33,6 +33,7 @@ private[spark] object RpcEnv {
     val rpcEnvNames = Map(
       "akka" -> "org.apache.spark.rpc.akka.AkkaRpcEnvFactory",
       "netty" -> "org.apache.spark.rpc.netty.NettyRpcEnvFactory")
+    //默认使用netty,放弃akka进行传输
     val rpcEnvName = conf.get("spark.rpc", "netty")
     val rpcEnvFactoryClassName = rpcEnvNames.getOrElse(rpcEnvName.toLowerCase, rpcEnvName)
     Utils.classForName(rpcEnvFactoryClassName).newInstance().asInstanceOf[RpcEnvFactory]
@@ -45,9 +46,10 @@ private[spark] object RpcEnv {
       conf: SparkConf,
       securityManager: SecurityManager,
       clientMode: Boolean = false): RpcEnv = {
-    // Using Reflection to create the RpcEnv to avoid to depend on Akka directly
-    val config = RpcEnvConfig(conf, name, host, port, securityManager, clientMode)
-    getRpcEnvFactory(conf).create(config)
+      // Using Reflection to create the RpcEnv to avoid to depend on Akka directly
+      // 使用反射创建RpcEnv,避免直接依赖AKKA框架
+      val config = RpcEnvConfig(conf, name, host, port, securityManager, clientMode)
+      getRpcEnvFactory(conf).create(config)
   }
 }
 

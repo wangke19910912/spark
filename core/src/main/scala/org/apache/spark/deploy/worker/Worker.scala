@@ -689,8 +689,10 @@ private[deploy] object Worker extends Logging {
 
   def main(argStrings: Array[String]) {
     SignalLogger.register(log)
+    //设置环境参数,将用户设置过的和默认进行综合
     val conf = new SparkConf
     val args = new WorkerArguments(argStrings, conf)
+    //开始启动后端进程
     val rpcEnv = startRpcEnvAndEndpoint(args.host, args.port, args.webUiPort, args.cores,
       args.memory, args.masters, args.workDir)
     rpcEnv.awaitTermination()
@@ -710,6 +712,7 @@ private[deploy] object Worker extends Logging {
     // The LocalSparkCluster runs multiple local sparkWorkerX RPC Environments
     val systemName = SYSTEM_NAME + workerNumber.map(_.toString).getOrElse("")
     val securityMgr = new SecurityManager(conf)
+    //和master相同,创建相同执行环境,
     val rpcEnv = RpcEnv.create(systemName, host, port, conf, securityMgr)
     val masterAddresses = masterUrls.map(RpcAddress.fromSparkURL(_))
     rpcEnv.setupEndpoint(ENDPOINT_NAME, new Worker(rpcEnv, webUiPort, cores, memory,

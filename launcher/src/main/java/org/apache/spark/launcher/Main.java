@@ -27,6 +27,7 @@ import static org.apache.spark.launcher.CommandBuilderUtils.*;
 
 /**
  * Command line interface for the Spark launcher. Used internally by Spark scripts.
+ * 整个任务提交和启动master和slave的启动入口
  */
 class Main {
 

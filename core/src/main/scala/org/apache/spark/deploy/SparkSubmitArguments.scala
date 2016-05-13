@@ -78,6 +78,9 @@ private[deploy] class SparkSubmitArguments(args: Seq[String], env: Map[String, S
   var useRest: Boolean = true // used internally
 
   /** Default properties present in the currently defined defaults file. */
+    /*
+       Lazy 属性调用时使用
+     */
   lazy val defaultSparkProperties: HashMap[String, String] = {
     val defaultProperties = new HashMap[String, String]()
     // scalastyle:off println
@@ -94,18 +97,22 @@ private[deploy] class SparkSubmitArguments(args: Seq[String], env: Map[String, S
 
   // Set parameters from command line arguments
   try {
+    //设置参数从命令行参数
     parse(args.asJava)
   } catch {
     case e: IllegalArgumentException =>
       SparkSubmit.printErrorAndExit(e.getMessage())
   }
   // Populate `sparkProperties` map from properties file
+  // 从spark-defaults.conf 文件中导出配置
   mergeDefaultSparkProperties()
+  // 过滤不以spark开头的变量
   // Remove keys that don't start with "spark." from `sparkProperties`.
   ignoreNonSparkProperties()
+  //导入没有配置的默认变量
   // Use `sparkProperties` map along with env vars to fill in any missing parameters
   loadEnvironmentArguments()
-
+  //校验参数
   validateArguments()
 
   /**
@@ -183,6 +190,7 @@ private[deploy] class SparkSubmitArguments(args: Seq[String], env: Map[String, S
     principal = Option(principal).orElse(sparkProperties.get("spark.yarn.principal")).orNull
 
     // Try to set main class from JAR if no --class argument is given
+    // 如果没有设置--class 参数识别jar文件入口,则去找相应的mainifast文件中的mainclass
     if (mainClass == null && !isPython && !isR && primaryResource != null) {
       val uri = new URI(primaryResource)
       val uriScheme = uri.getScheme()

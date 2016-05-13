@@ -37,6 +37,8 @@ import org.apache.spark.util.Utils
  * In general this class should be instantiated by the SparkEnv and most components
  * should access it from that. There are some cases where the SparkEnv hasn't been
  * initialized yet and this class must be instantiated directly.
+  * 通常情况下,这个类应该通过SparkEnv实例化,大多数组件应该通过它访问,这里有一下情况,SparkEnv还没有
+  * 完成初始化,但是这个类必须直接初始化
  *
  * Spark currently supports authentication via a shared secret.
  * Authentication can be configured to be on via the 'spark.authenticate' configuration
@@ -45,6 +47,8 @@ import org.apache.spark.util.Utils
  * make sure both sides have the same shared secret and are allowed to communicate.
  * If the shared secret is not identical they will not be allowed to communicate.
  *
+  * spark 通过 spark.authenticate 来进行初始化权限管理措施
+  *
  * The Spark UI can also be secured by using javax servlet filters. A user may want to
  * secure the UI if it has data that other users should not be allowed to see. The javax
  * servlet filter specified by the user can authenticate the user and then once the user
@@ -52,7 +56,8 @@ import org.apache.spark.util.Utils
  * authorized to view the UI. The configs 'spark.acls.enable' and 'spark.ui.view.acls'
  * control the behavior of the acls. Note that the person who started the application
  * always has view access to the UI.
- *
+ *  用户对于spark.ui的访问控制配置在spark.acls.enable和spark.ui.view.acls中
+  *
  * Spark has a set of modify acls (`spark.modify.acls`) that controls which users have permission
  * to  modify a single application. This would include things like killing the application. By
  * default the person who started the application has modify access. For modify access through
@@ -66,6 +71,7 @@ import org.apache.spark.util.Utils
  *
  * At this point spark has multiple communication protocols that need to be secured and
  * different underlying mechanisms are used depending on the protocol:
+  * 有三种不同的协议来支持服务器间相互通信
  *
  *  - Akka -> The only option here is to use the Akka Remote secure-cookie functionality.
  *            Akka remoting allows you to specify a secure cookie that will be exchanged

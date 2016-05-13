@@ -63,10 +63,13 @@ then
   shift
 fi
 
+#option=start
 option=$1
 shift
+#command=org.apache.spark.deploy.master.Master
 command=$1
 shift
+#instance=1
 instance=$1
 shift
 

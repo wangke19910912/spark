@@ -93,6 +93,7 @@ private[spark] class AkkaRpcEnv private[akka] (
         // Listen for remote client network events
         context.system.eventStream.subscribe(self, classOf[AssociationEvent])
         safelyCall(endpoint) {
+          //在Actor启动时调用preStart方法,endpoint代表当前Master#onStart方法
           endpoint.onStart()
         }
       }
@@ -119,6 +120,7 @@ private[spark] class AkkaRpcEnv private[akka] (
         case m: AkkaMessage =>
           logDebug(s"Received RPC message: $m")
           safelyCall(endpoint) {
+            //如果是正常的AKKA进行处理
             processMessage(endpoint, m, sender)
           }
 
@@ -152,6 +154,8 @@ private[spark] class AkkaRpcEnv private[akka] (
     val message = m.message
     val needReply = m.needReply
     val pf: PartialFunction[Any, Unit] =
+
+      //根据是否回复调用端选择使用Master#receiveReply or Master#receive
       if (needReply) {
         endpoint.receiveAndReply(new RpcCallContext {
           override def sendFailure(e: Throwable): Unit = {
@@ -246,8 +250,10 @@ private[spark] class AkkaRpcEnv private[akka] (
 private[spark] class AkkaRpcEnvFactory extends RpcEnvFactory {
 
   def create(config: RpcEnvConfig): RpcEnv = {
+    //创建一个ActorSystem
     val (actorSystem, boundPort) = AkkaUtils.createActorSystem(
       config.name, config.host, config.port, config.conf, config.securityManager)
+    //启动一个错误监听Actor
     actorSystem.actorOf(Props(classOf[ErrorMonitor]), "ErrorMonitor")
     new AkkaRpcEnv(actorSystem, config.conf, boundPort)
   }

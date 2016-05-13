@@ -1840,6 +1840,7 @@ private[spark] object Utils extends Logging {
 
   /** Return the path of the default Spark properties file. */
   def getDefaultPropertiesFile(env: Map[String, String] = sys.env): String = {
+    //首先从SPARK_CONF_DIR中获取spark-default.conf的文件位置
     env.get("SPARK_CONF_DIR")
       .orElse(env.get("SPARK_HOME").map { t => s"$t${File.separator}conf" })
       .map { t => new File(s"$t${File.separator}spark-defaults.conf")}
